@@ -8,7 +8,8 @@ This project generates a dataset of 200 7-digit numbers (100 primes and 100 non-
 
 ## Features
 
-- **Data Generation**: Automatically generates 100 7-digit prime and 100 non-prime numbers
+- **Custom Dataset Generation**: Generate CSV datasets with any number of prime and non-prime samples using `generate_dataset.py`
+- **Data Generation**: Automatically generates 100 7-digit prime and 100 non-prime numbers (default)
 - **Feature Engineering**: Converts each number into 7 features (one per digit position: `ten_power_0` through `ten_power_6`)
 - **AutoML**: Trains and evaluates multiple models:
   - Logistic Regression
@@ -27,7 +28,29 @@ pip install -r requirements.txt
 
 ## Usage
 
-Run the complete ML pipeline:
+### Generate Dataset with Custom Sample Size
+
+To generate a dataset CSV file with a custom number of samples:
+
+```bash
+# Generate default 200 samples (100 primes + 100 non-primes)
+python generate_dataset.py
+
+# Generate 1000 samples (500 primes + 500 non-primes)
+python generate_dataset.py --primes 500 --non-primes 500
+
+# Generate to custom output file
+python generate_dataset.py --output my_dataset.csv --primes 200 --non-primes 200
+
+# Generate 2000 primes and 2000 non-primes for larger training set
+python generate_dataset.py --primes 2000 --non-primes 2000 --output prime_dataset_large.csv
+```
+
+Run `python generate_dataset.py --help` for all available options.
+
+### Run Complete ML Pipeline
+
+Run the complete ML pipeline with default dataset (200 samples):
 
 ```bash
 python prime_ml_classifier.py
