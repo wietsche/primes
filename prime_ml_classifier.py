@@ -235,8 +235,17 @@ def load_dataset_from_csv(csv_path):
     except FileNotFoundError:
         print(f"Error: CSV file '{csv_path}' not found", file=sys.stderr)
         sys.exit(1)
+    except pd.errors.EmptyDataError:
+        print(f"Error: CSV file '{csv_path}' is empty", file=sys.stderr)
+        sys.exit(1)
+    except pd.errors.ParserError as e:
+        print(f"Error: Failed to parse CSV file '{csv_path}': {e}", file=sys.stderr)
+        sys.exit(1)
+    except ValueError as e:
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
     except Exception as e:
-        print(f"Error loading CSV file: {e}", file=sys.stderr)
+        print(f"Error loading CSV file '{csv_path}': {e}", file=sys.stderr)
         sys.exit(1)
 
 

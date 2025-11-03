@@ -137,6 +137,12 @@ def test_classifier_with_csv_input():
     """Test that prime_ml_classifier.py works with CSV input."""
     print("\nTesting prime_ml_classifier.py with CSV input...")
     
+    # Determine the directory containing the test script
+    if '__file__' in globals():
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+    else:
+        script_dir = os.getcwd()
+    
     # Generate a small test dataset
     with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as tmp:
         tmp_path = tmp.name
@@ -146,7 +152,7 @@ def test_classifier_with_csv_input():
         result = subprocess.run(
             [sys.executable, 'generate_dataset.py', 
              '--primes', '20', '--non-primes', '20', '--output', tmp_path],
-            cwd=os.path.dirname(os.path.abspath(__file__)),
+            cwd=script_dir,
             capture_output=True,
             text=True,
             timeout=30
@@ -158,7 +164,7 @@ def test_classifier_with_csv_input():
         # Now test prime_ml_classifier.py with the CSV input
         result = subprocess.run(
             [sys.executable, 'prime_ml_classifier.py', '--input', tmp_path],
-            cwd=os.path.dirname(os.path.abspath(__file__)),
+            cwd=script_dir,
             capture_output=True,
             text=True,
             timeout=120
