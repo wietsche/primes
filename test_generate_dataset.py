@@ -38,7 +38,7 @@ def test_default_generation():
             cwd=os.path.dirname(os.path.abspath(__file__)),
             capture_output=True,
             text=True,
-            timeout=60
+            timeout=30
         )
         
         assert result.returncode == 0, f"Generation failed: {result.stderr}"
@@ -80,7 +80,7 @@ def test_custom_counts():
             cwd=os.path.dirname(os.path.abspath(__file__)),
             capture_output=True,
             text=True,
-            timeout=60
+            timeout=30
         )
         
         assert result.returncode == 0, f"Generation failed: {result.stderr}"

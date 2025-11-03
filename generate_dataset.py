@@ -9,11 +9,18 @@ It allows customization of the number of samples to generate.
 
 import argparse
 import sys
-from prime_ml_classifier import (
-    generate_prime_numbers,
-    generate_non_prime_numbers,
-    create_dataset
-)
+
+try:
+    from prime_ml_classifier import (
+        generate_prime_numbers,
+        generate_non_prime_numbers,
+        create_dataset
+    )
+except ImportError as e:
+    print("Error: Failed to import from prime_ml_classifier.py", file=sys.stderr)
+    print(f"Make sure prime_ml_classifier.py is in the same directory.", file=sys.stderr)
+    print(f"Details: {e}", file=sys.stderr)
+    sys.exit(1)
 
 
 def main():
