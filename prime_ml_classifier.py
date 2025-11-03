@@ -40,13 +40,19 @@ def is_prime(n):
 
 
 def generate_prime_numbers(count, min_val=1000000, max_val=9999999):
-    """Generate a specified number of 7-digit prime numbers."""
+    """Generate a specified number of 7-digit prime numbers.
+    Only generates numbers that don't end in 0, 2, or 5."""
     primes = []
     attempts = 0
     max_attempts = count * MAX_GENERATION_ATTEMPTS_MULTIPLIER  # Prevent infinite loops
+    valid_endings = [1, 3, 7, 9]  # Numbers ending in 0, 2, 5 are excluded
     
     while len(primes) < count and attempts < max_attempts:
-        candidate = random.randint(min_val, max_val)
+        candidate = random.randint(min_val // 10, max_val // 10) * 10 + random.choice(valid_endings)
+        # Ensure candidate is within bounds
+        if candidate < min_val or candidate > max_val:
+            attempts += 1
+            continue
         if is_prime(candidate) and candidate not in primes:
             primes.append(candidate)
         attempts += 1
@@ -58,13 +64,19 @@ def generate_prime_numbers(count, min_val=1000000, max_val=9999999):
 
 
 def generate_non_prime_numbers(count, min_val=1000000, max_val=9999999):
-    """Generate a specified number of 7-digit non-prime numbers."""
+    """Generate a specified number of 7-digit non-prime numbers.
+    Only generates numbers that don't end in 0, 2, or 5."""
     non_primes = []
     attempts = 0
     max_attempts = count * MAX_GENERATION_ATTEMPTS_MULTIPLIER
+    valid_endings = [1, 3, 7, 9]  # Numbers ending in 0, 2, 5 are excluded
     
     while len(non_primes) < count and attempts < max_attempts:
-        candidate = random.randint(min_val, max_val)
+        candidate = random.randint(min_val // 10, max_val // 10) * 10 + random.choice(valid_endings)
+        # Ensure candidate is within bounds
+        if candidate < min_val or candidate > max_val:
+            attempts += 1
+            continue
         if not is_prime(candidate) and candidate not in non_primes:
             non_primes.append(candidate)
         attempts += 1
