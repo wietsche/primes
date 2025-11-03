@@ -8,6 +8,7 @@ import random
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import os
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score, roc_curve, classification_report, confusion_matrix
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
@@ -17,6 +18,9 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import cross_val_score
 import warnings
 warnings.filterwarnings('ignore')
+
+# Constants
+MAX_GENERATION_ATTEMPTS_MULTIPLIER = 1000  # Max attempts = count * multiplier
 
 
 def is_prime(n):
@@ -37,7 +41,7 @@ def generate_prime_numbers(count, min_val=1000000, max_val=9999999):
     """Generate a specified number of 7-digit prime numbers."""
     primes = []
     attempts = 0
-    max_attempts = count * 1000  # Prevent infinite loops
+    max_attempts = count * MAX_GENERATION_ATTEMPTS_MULTIPLIER  # Prevent infinite loops
     
     while len(primes) < count and attempts < max_attempts:
         candidate = random.randint(min_val, max_val)
@@ -55,7 +59,7 @@ def generate_non_prime_numbers(count, min_val=1000000, max_val=9999999):
     """Generate a specified number of 7-digit non-prime numbers."""
     non_primes = []
     attempts = 0
-    max_attempts = count * 1000
+    max_attempts = count * MAX_GENERATION_ATTEMPTS_MULTIPLIER
     
     while len(non_primes) < count and attempts < max_attempts:
         candidate = random.randint(min_val, max_val)
@@ -155,7 +159,7 @@ def simple_automl(X_train, y_train, X_test, y_test):
     return best_model, best_name, results
 
 
-def plot_evaluation_metrics(y_test, y_pred, y_pred_proba, model_name):
+def plot_evaluation_metrics(y_test, y_pred, y_pred_proba, model_name, output_dir='.'):
     """Plot ROC curve and AUC."""
     # Calculate ROC curve
     fpr, tpr, thresholds = roc_curve(y_test, y_pred_proba)
@@ -198,8 +202,9 @@ def plot_evaluation_metrics(y_test, y_pred, y_pred_proba, model_name):
                         fontsize=16)
     
     plt.tight_layout()
-    plt.savefig('/home/runner/work/primes/primes/model_evaluation.png', dpi=150, bbox_inches='tight')
-    print("\nEvaluation plot saved as 'model_evaluation.png'")
+    output_path = os.path.join(output_dir, 'model_evaluation.png')
+    plt.savefig(output_path, dpi=150, bbox_inches='tight')
+    print(f"\nEvaluation plot saved as '{output_path}'")
     plt.close()
 
 
@@ -212,6 +217,9 @@ def main():
     # Set random seed for reproducibility
     random.seed(42)
     np.random.seed(42)
+    
+    # Get output directory (current directory by default)
+    output_dir = os.path.dirname(os.path.abspath(__file__)) if '__file__' in globals() else '.'
     
     # Step 1: Generate prime and non-prime numbers
     print("\nStep 1: Generating 7-digit numbers...")
@@ -233,8 +241,9 @@ def main():
     print(df.head(10))
     
     # Save dataset
-    df.to_csv('/home/runner/work/primes/primes/prime_dataset.csv', index=False)
-    print("\nDataset saved as 'prime_dataset.csv'")
+    dataset_path = os.path.join(output_dir, 'prime_dataset.csv')
+    df.to_csv(dataset_path, index=False)
+    print(f"\nDataset saved as '{dataset_path}'")
     
     # Step 3: Prepare features and labels
     print("\nStep 3: Preparing features and labels...")
@@ -282,7 +291,7 @@ def main():
     # Step 7: Plot evaluation metrics
     print("\nStep 7: Generating evaluation plots...")
     print("-" * 60)
-    plot_evaluation_metrics(y_test, y_pred, y_pred_proba, best_name)
+    plot_evaluation_metrics(y_test, y_pred, y_pred_proba, best_name, output_dir)
     
     # Summary
     print("\n" + "="*60)

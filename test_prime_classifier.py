@@ -3,8 +3,6 @@ Simple test to verify the prime ML classifier functions work correctly.
 """
 
 import sys
-sys.path.insert(0, '/home/runner/work/primes/primes')
-
 from prime_ml_classifier import (
     is_prime, 
     number_to_features, 
