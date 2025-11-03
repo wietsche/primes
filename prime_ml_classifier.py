@@ -47,8 +47,12 @@ def generate_prime_numbers(count, min_val=1000000, max_val=9999999):
     max_attempts = count * MAX_GENERATION_ATTEMPTS_MULTIPLIER  # Prevent infinite loops
     valid_endings = [1, 3, 7, 9]  # Numbers ending in 0, 2, 5 are excluded
     
+    # Calculate the range for random number generation (excluding the last digit)
+    min_prefix = (min_val + 9) // 10  # Round up to ensure min_val is respected
+    max_prefix = max_val // 10
+    
     while len(primes) < count and attempts < max_attempts:
-        candidate = random.randint(min_val // 10, max_val // 10) * 10 + random.choice(valid_endings)
+        candidate = random.randint(min_prefix, max_prefix) * 10 + random.choice(valid_endings)
         # Ensure candidate is within bounds
         if candidate < min_val or candidate > max_val:
             attempts += 1
@@ -71,8 +75,12 @@ def generate_non_prime_numbers(count, min_val=1000000, max_val=9999999):
     max_attempts = count * MAX_GENERATION_ATTEMPTS_MULTIPLIER
     valid_endings = [1, 3, 7, 9]  # Numbers ending in 0, 2, 5 are excluded
     
+    # Calculate the range for random number generation (excluding the last digit)
+    min_prefix = (min_val + 9) // 10  # Round up to ensure min_val is respected
+    max_prefix = max_val // 10
+    
     while len(non_primes) < count and attempts < max_attempts:
-        candidate = random.randint(min_val // 10, max_val // 10) * 10 + random.choice(valid_endings)
+        candidate = random.randint(min_prefix, max_prefix) * 10 + random.choice(valid_endings)
         # Ensure candidate is within bounds
         if candidate < min_val or candidate > max_val:
             attempts += 1
