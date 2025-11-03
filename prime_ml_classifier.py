@@ -134,6 +134,37 @@ def create_dataset(prime_numbers, non_prime_numbers):
     return df
 
 
+def one_hot_encode_features(X):
+    """
+    Transform each feature to one-hot encoding.
+    
+    Each feature (value 0-9) is transformed to 10 binary features.
+    For example, ten_power_0 with value 3 becomes:
+    ten_power_0_is_0=0, ten_power_0_is_1=0, ten_power_0_is_2=0, ten_power_0_is_3=1, ..., ten_power_0_is_9=0
+    
+    Args:
+        X: numpy array of shape (n_samples, n_features) with values 0-9
+        
+    Returns:
+        numpy array of shape (n_samples, n_features * 10) with binary values
+    """
+    n_samples, n_features = X.shape
+    n_values = 10  # Each digit can be 0-9
+    
+    # Create output array for one-hot encoded features
+    X_encoded = np.zeros((n_samples, n_features * n_values), dtype=int)
+    
+    # For each feature, create one-hot encoding
+    for feature_idx in range(n_features):
+        for value in range(n_values):
+            # Column index for this one-hot feature
+            col_idx = feature_idx * n_values + value
+            # Set to 1 where the feature equals this value
+            X_encoded[:, col_idx] = (X[:, feature_idx] == value).astype(int)
+    
+    return X_encoded
+
+
 def simple_automl(X_train, y_train, X_test, y_test):
     """
     Simple AutoML: Train multiple models and select the best one based on cross-validation.
@@ -371,15 +402,25 @@ Examples:
     print(f"Training set class distribution: {np.bincount(y_train)}")
     print(f"Test set class distribution: {np.bincount(y_test)}")
     
-    # Step 4: AutoML - Train and select best model
-    print("\nStep 4: Training models with AutoML...")
-    best_model, best_name, cv_results = simple_automl(X_train, y_train, X_test, y_test)
+    # Step 4: Apply one-hot encoding transformation
+    print("\nStep 4: Applying one-hot encoding transformation...")
+    print("-" * 60)
+    print(f"Original features shape: {X_train.shape}")
+    X_train_encoded = one_hot_encode_features(X_train)
+    X_test_encoded = one_hot_encode_features(X_test)
+    print(f"One-hot encoded features shape: {X_train_encoded.shape}")
+    print(f"Each of the 7 features (ten_power_0 to ten_power_6) is now represented by 10 binary features")
+    print(f"Total features: 7 × 10 = 70 binary features")
     
-    # Step 5: Evaluate on test set
-    print("\nStep 5: Evaluating best model on test set...")
+    # Step 5: AutoML - Train and select best model
+    print("\nStep 5: Training models with AutoML...")
+    best_model, best_name, cv_results = simple_automl(X_train_encoded, y_train, X_test_encoded, y_test)
+    
+    # Step 6: Evaluate on test set
+    print("\nStep 6: Evaluating best model on test set...")
     print("="*60)
-    y_pred = best_model.predict(X_test)
-    y_pred_proba = best_model.predict_proba(X_test)[:, 1]
+    y_pred = best_model.predict(X_test_encoded)
+    y_pred_proba = best_model.predict_proba(X_test_encoded)[:, 1]
     
     # Calculate metrics
     test_auc = roc_auc_score(y_test, y_pred_proba)
@@ -392,8 +433,8 @@ Examples:
                                 target_names=['Non-Prime', 'Prime'],
                                 digits=4))
     
-    # Step 6: Plot evaluation metrics
-    print("\nStep 6: Generating evaluation plots...")
+    # Step 7: Plot evaluation metrics
+    print("\nStep 7: Generating evaluation plots...")
     print("-" * 60)
     plot_evaluation_metrics(y_test, y_pred, y_pred_proba, best_name, output_dir)
     
@@ -404,7 +445,7 @@ Examples:
     print(f"Total samples: {len(df)} ({df['prime'].sum()} primes + {len(df) - df['prime'].sum()} non-primes)")
     print(f"Training samples: {len(X_train)} (80%)")
     print(f"Test samples: {len(X_test)} (20%)")
-    print(f"Features: 7 digit positions (ten_power_0 to ten_power_6)")
+    print(f"Features: 7 digit positions transformed to 70 one-hot encoded features")
     print(f"Best model: {best_name}")
     print(f"Test AUC: {test_auc:.4f}")
     print("="*60)
