@@ -8,15 +8,18 @@ import tempfile
 import subprocess
 
 
+def get_script_dir():
+    """Helper function to determine the script directory."""
+    if '__file__' in globals():
+        return os.path.dirname(os.path.abspath(__file__))
+    return os.getcwd()
+
+
 def test_pca_analysis_default():
     """Test PCA analysis with default parameters."""
     print("Testing PCA analysis with default parameters...")
     
-    # Determine the directory containing the test script
-    if '__file__' in globals():
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-    else:
-        script_dir = os.getcwd()
+    script_dir = get_script_dir()
     
     # Create temporary output file
     with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
@@ -56,11 +59,7 @@ def test_pca_analysis_custom_dataset():
     """Test PCA analysis with a custom dataset."""
     print("\nTesting PCA analysis with custom dataset...")
     
-    # Determine the directory containing the test script
-    if '__file__' in globals():
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-    else:
-        script_dir = os.getcwd()
+    script_dir = get_script_dir()
     
     # Create a temporary dataset
     with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as tmp_data:
@@ -114,11 +113,7 @@ def test_pca_analysis_missing_file():
     """Test PCA analysis with missing input file."""
     print("\nTesting PCA analysis with missing input file...")
     
-    # Determine the directory containing the test script
-    if '__file__' in globals():
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-    else:
-        script_dir = os.getcwd()
+    script_dir = get_script_dir()
     
     # Run PCA analysis with non-existent file
     result = subprocess.run(

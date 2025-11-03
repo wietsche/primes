@@ -28,8 +28,7 @@ def load_dataset(csv_path):
         df = pd.read_csv(csv_path)
         
         # Validate required columns
-        required_columns = ['ten_power_0', 'ten_power_1', 'ten_power_2', 'ten_power_3',
-                           'ten_power_4', 'ten_power_5', 'ten_power_6', 'prime']
+        required_columns = [f'ten_power_{i}' for i in range(7)] + ['prime']
         
         missing_columns = set(required_columns) - set(df.columns)
         if missing_columns:
@@ -134,7 +133,7 @@ def plot_pca_results(X_pca, prime_mask, pca, output_path='pca_analysis.png'):
     
     # Overall title
     fig.suptitle('Principal Component Analysis of 7-Digit Numbers\n(Based on Individual Digit Features)', 
-                 fontsize=16, fontweight='bold', y=1.00)
+                 fontsize=16, fontweight='bold', y=1.02)
     
     plt.tight_layout()
     plt.savefig(output_path, dpi=150, bbox_inches='tight')
