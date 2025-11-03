@@ -11,6 +11,7 @@ This project generates a dataset of 200 7-digit numbers (100 primes and 100 non-
 - **Custom Dataset Generation**: Generate CSV datasets with any number of prime and non-prime samples using `generate_dataset.py`
 - **Data Generation**: Automatically generates 100 7-digit prime and 100 non-prime numbers (default)
 - **Feature Engineering**: Converts each number into 7 features (one per digit position: `ten_power_0` through `ten_power_6`)
+- **PCA Visualization**: Visualize primes and non-primes in 2D space using Principal Component Analysis with `pca_analysis.py`
 - **AutoML**: Trains and evaluates multiple models:
   - Logistic Regression
   - Random Forest
@@ -67,11 +68,32 @@ python prime_ml_classifier.py --input large_dataset.csv
 
 Run `python prime_ml_classifier.py --help` for all available options.
 
+### Visualize Data with PCA
+
+To visualize the dataset in 2D space using Principal Component Analysis:
+
+```bash
+# Use default dataset (prime_dataset.csv)
+python pca_analysis.py
+
+# Use a custom dataset
+python pca_analysis.py --input my_dataset.csv
+
+# Specify custom output file
+python pca_analysis.py --output my_pca_plot.png
+
+# Use both custom input and output
+python pca_analysis.py --input large_dataset.csv --output large_pca.png
+```
+
+Run `python pca_analysis.py --help` for all available options.
+
 ## Output
 
-The script generates:
+The scripts generate:
 1. **prime_dataset.csv** - The complete dataset with 200 samples
 2. **model_evaluation.png** - Visualization of ROC curve and confusion matrix
+3. **pca_analysis.png** - 2D PCA visualization showing primes and non-primes side-by-side
 
 ## Dataset Structure
 
