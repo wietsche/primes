@@ -167,6 +167,47 @@ def test_data_integrity():
             os.remove(tmp_path)
 
 
+def test_number_endings():
+    """Test that generated numbers don't end in 0, 2, or 5."""
+    print("\nTesting that generated numbers don't end in 0, 2, or 5...")
+    
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as tmp:
+        tmp_path = tmp.name
+    
+    try:
+        result = subprocess.run(
+            [sys.executable, 'generate_dataset.py', 
+             '--primes', '30', '--non-primes', '30', '--output', tmp_path],
+            cwd=os.path.dirname(os.path.abspath(__file__)),
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        
+        assert result.returncode == 0, "Generation should succeed"
+        
+        df = pd.read_csv(tmp_path)
+        
+        # Check that all numbers end in 1, 3, 7, or 9
+        for idx, row in df.iterrows():
+            number = row['number']
+            last_digit = number % 10
+            assert last_digit in [1, 3, 7, 9], \
+                f"Number {number} should end in 1, 3, 7, or 9, not {last_digit}"
+            assert last_digit not in [0, 2, 5], \
+                f"Number {number} should not end in 0, 2, or 5"
+            
+            # Also verify ten_power_0 matches
+            assert row['ten_power_0'] == last_digit, \
+                f"ten_power_0 should match last digit for {number}"
+        
+        print(f"✓ All {len(df)} numbers correctly end in 1, 3, 7, or 9")
+        
+    finally:
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
+
+
 def main():
     """Run all tests."""
     print("="*60)
@@ -179,6 +220,7 @@ def main():
         test_custom_counts()
         test_invalid_arguments()
         test_data_integrity()
+        test_number_endings()
         
         print("\n" + "="*60)
         print("All tests passed! ✓")

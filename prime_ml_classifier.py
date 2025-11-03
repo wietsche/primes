@@ -40,13 +40,24 @@ def is_prime(n):
 
 
 def generate_prime_numbers(count, min_val=1000000, max_val=9999999):
-    """Generate a specified number of 7-digit prime numbers."""
+    """Generate a specified number of 7-digit prime numbers.
+    Only generates numbers that don't end in 0, 2, or 5."""
     primes = []
     attempts = 0
     max_attempts = count * MAX_GENERATION_ATTEMPTS_MULTIPLIER  # Prevent infinite loops
+    valid_endings = [1, 3, 7, 9]  # Numbers ending in 0, 2, 5 are excluded
+    
+    # Calculate the range for random number generation (excluding the last digit)
+    min_prefix = (min_val + 9) // 10  # Calculate minimum prefix to ensure candidates >= min_val
+    max_prefix = max_val // 10
     
     while len(primes) < count and attempts < max_attempts:
-        candidate = random.randint(min_val, max_val)
+        candidate = random.randint(min_prefix, max_prefix) * 10 + random.choice(valid_endings)
+        # Bounds check needed because candidate may fall outside [min_val, max_val]
+        # due to the random ending (e.g., min_prefix*10+9 might exceed max_val)
+        if candidate < min_val or candidate > max_val:
+            attempts += 1
+            continue
         if is_prime(candidate) and candidate not in primes:
             primes.append(candidate)
         attempts += 1
@@ -58,13 +69,24 @@ def generate_prime_numbers(count, min_val=1000000, max_val=9999999):
 
 
 def generate_non_prime_numbers(count, min_val=1000000, max_val=9999999):
-    """Generate a specified number of 7-digit non-prime numbers."""
+    """Generate a specified number of 7-digit non-prime numbers.
+    Only generates numbers that don't end in 0, 2, or 5."""
     non_primes = []
     attempts = 0
     max_attempts = count * MAX_GENERATION_ATTEMPTS_MULTIPLIER
+    valid_endings = [1, 3, 7, 9]  # Numbers ending in 0, 2, 5 are excluded
+    
+    # Calculate the range for random number generation (excluding the last digit)
+    min_prefix = (min_val + 9) // 10  # Calculate minimum prefix to ensure candidates >= min_val
+    max_prefix = max_val // 10
     
     while len(non_primes) < count and attempts < max_attempts:
-        candidate = random.randint(min_val, max_val)
+        candidate = random.randint(min_prefix, max_prefix) * 10 + random.choice(valid_endings)
+        # Bounds check needed because candidate may fall outside [min_val, max_val]
+        # due to the random ending (e.g., min_prefix*10+9 might exceed max_val)
+        if candidate < min_val or candidate > max_val:
+            attempts += 1
+            continue
         if not is_prime(candidate) and candidate not in non_primes:
             non_primes.append(candidate)
         attempts += 1

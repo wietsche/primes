@@ -96,6 +96,29 @@ def test_generate_non_prime_numbers():
     print(f"✓ Generated 10 non-primes: {non_primes[:5]}...")
 
 
+def test_number_endings():
+    """Test that generated numbers don't end in 0, 2, or 5."""
+    print("\nTesting that numbers don't end in 0, 2, or 5...")
+    
+    # Generate numbers
+    primes = generate_prime_numbers(20, min_val=1000000, max_val=9999999)
+    non_primes = generate_non_prime_numbers(20, min_val=1000000, max_val=9999999)
+    
+    # Check primes
+    for p in primes:
+        last_digit = p % 10
+        assert last_digit not in [0, 2, 5], f"Prime {p} should not end in 0, 2, or 5"
+        assert last_digit in [1, 3, 7, 9], f"Prime {p} should end in 1, 3, 7, or 9"
+    
+    # Check non-primes
+    for np in non_primes:
+        last_digit = np % 10
+        assert last_digit not in [0, 2, 5], f"Non-prime {np} should not end in 0, 2, or 5"
+        assert last_digit in [1, 3, 7, 9], f"Non-prime {np} should end in 1, 3, 7, or 9"
+    
+    print("✓ All numbers correctly end in 1, 3, 7, or 9")
+
+
 def test_load_dataset_from_csv():
     """Test loading dataset from CSV file."""
     print("\nTesting load_dataset_from_csv function...")
@@ -194,6 +217,7 @@ def main():
         test_number_to_features()
         test_generate_prime_numbers()
         test_generate_non_prime_numbers()
+        test_number_endings()
         test_load_dataset_from_csv()
         test_classifier_with_csv_input()
         
