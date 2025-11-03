@@ -3,11 +3,15 @@ Simple test to verify the prime ML classifier functions work correctly.
 """
 
 import sys
+import os
+import tempfile
+import subprocess
 from prime_ml_classifier import (
     is_prime, 
     number_to_features, 
     generate_prime_numbers,
-    generate_non_prime_numbers
+    generate_non_prime_numbers,
+    load_dataset_from_csv
 )
 
 
@@ -92,6 +96,87 @@ def test_generate_non_prime_numbers():
     print(f"✓ Generated 10 non-primes: {non_primes[:5]}...")
 
 
+def test_load_dataset_from_csv():
+    """Test loading dataset from CSV file."""
+    print("\nTesting load_dataset_from_csv function...")
+    
+    # Create a temporary CSV file
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as tmp:
+        tmp_path = tmp.name
+        # Write a small test dataset
+        tmp.write("ten_power_0,ten_power_1,ten_power_2,ten_power_3,ten_power_4,ten_power_5,ten_power_6,prime,number\n")
+        tmp.write("7,6,5,4,3,2,1,1,1234567\n")
+        tmp.write("3,4,5,6,7,8,9,0,9876543\n")
+    
+    try:
+        # Load the dataset
+        df = load_dataset_from_csv(tmp_path)
+        
+        # Verify the data
+        assert len(df) == 2, "Should have 2 rows"
+        assert df.shape[1] == 9, "Should have 9 columns"
+        
+        # Check first row
+        assert df.iloc[0]['number'] == 1234567, "First number should be 1234567"
+        assert df.iloc[0]['prime'] == 1, "First number should be marked as prime"
+        assert df.iloc[0]['ten_power_0'] == 7, "First number ones digit should be 7"
+        
+        # Check second row
+        assert df.iloc[1]['number'] == 9876543, "Second number should be 9876543"
+        assert df.iloc[1]['prime'] == 0, "Second number should be marked as non-prime"
+        assert df.iloc[1]['ten_power_6'] == 9, "Second number millions digit should be 9"
+        
+        print("✓ load_dataset_from_csv tests passed")
+        
+    finally:
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
+
+
+def test_classifier_with_csv_input():
+    """Test that prime_ml_classifier.py works with CSV input."""
+    print("\nTesting prime_ml_classifier.py with CSV input...")
+    
+    # Generate a small test dataset
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as tmp:
+        tmp_path = tmp.name
+    
+    try:
+        # Use generate_dataset.py to create a small dataset
+        result = subprocess.run(
+            [sys.executable, 'generate_dataset.py', 
+             '--primes', '20', '--non-primes', '20', '--output', tmp_path],
+            cwd=os.path.dirname(os.path.abspath(__file__)),
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        
+        assert result.returncode == 0, f"Dataset generation failed: {result.stderr}"
+        assert os.path.exists(tmp_path), "Dataset file should exist"
+        
+        # Now test prime_ml_classifier.py with the CSV input
+        result = subprocess.run(
+            [sys.executable, 'prime_ml_classifier.py', '--input', tmp_path],
+            cwd=os.path.dirname(os.path.abspath(__file__)),
+            capture_output=True,
+            text=True,
+            timeout=120
+        )
+        
+        assert result.returncode == 0, f"Classifier failed: {result.stderr}"
+        assert "Loading dataset from" in result.stdout, "Should indicate loading from CSV"
+        assert "✓ Dataset loaded successfully" in result.stdout, "Should successfully load dataset"
+        assert "Dataset shape: (40, 9)" in result.stdout, "Should have 40 samples"
+        assert "Best Model:" in result.stdout, "Should train and select a model"
+        
+        print("✓ prime_ml_classifier.py with CSV input tests passed")
+        
+    finally:
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
+
+
 def main():
     """Run all tests."""
     print("="*60)
@@ -103,6 +188,8 @@ def main():
         test_number_to_features()
         test_generate_prime_numbers()
         test_generate_non_prime_numbers()
+        test_load_dataset_from_csv()
+        test_classifier_with_csv_input()
         
         print("\n" + "="*60)
         print("All tests passed! ✓")
@@ -110,6 +197,11 @@ def main():
         
     except AssertionError as e:
         print(f"\n✗ Test failed: {e}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"\n✗ Unexpected error: {e}")
+        import traceback
+        traceback.print_exc()
         sys.exit(1)
 
 
