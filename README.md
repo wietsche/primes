@@ -50,11 +50,22 @@ Run `python generate_dataset.py --help` for all available options.
 
 ### Run Complete ML Pipeline
 
-Run the complete ML pipeline with default dataset (200 samples):
+You can either train with a pre-generated CSV file or let the script generate a new dataset:
 
 ```bash
+# Train using a pre-generated CSV file (recommended workflow)
+python generate_dataset.py --output my_dataset.csv
+python prime_ml_classifier.py --input my_dataset.csv
+
+# Generate new dataset and train (default behavior, generates 200 samples)
 python prime_ml_classifier.py
+
+# Train using a large pre-generated dataset
+python generate_dataset.py --primes 1000 --non-primes 1000 --output large_dataset.csv
+python prime_ml_classifier.py --input large_dataset.csv
 ```
+
+Run `python prime_ml_classifier.py --help` for all available options.
 
 ## Output
 
