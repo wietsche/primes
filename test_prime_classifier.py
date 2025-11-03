@@ -6,12 +6,14 @@ import sys
 import os
 import tempfile
 import subprocess
+import numpy as np
 from prime_ml_classifier import (
     is_prime, 
     number_to_features, 
     generate_prime_numbers,
     generate_non_prime_numbers,
-    load_dataset_from_csv
+    load_dataset_from_csv,
+    one_hot_encode_features
 )
 
 
@@ -56,6 +58,46 @@ def test_number_to_features():
     assert features2['ten_power_6'] == 9, "Millions digit should be 9"
     
     print("✓ number_to_features tests passed")
+
+
+def test_one_hot_encode_features():
+    """Test the one-hot encoding transformer."""
+    print("\nTesting one_hot_encode_features function...")
+    
+    # Test with simple examples
+    X = np.array([[7, 6, 5, 4, 3, 2, 1],
+                  [0, 1, 2, 3, 4, 5, 6],
+                  [9, 9, 9, 9, 9, 9, 9]])
+    
+    X_encoded = one_hot_encode_features(X)
+    
+    # Check shape
+    assert X_encoded.shape == (3, 70), f"Shape should be (3, 70), got {X_encoded.shape}"
+    
+    # Check that each row sums to 7 (one feature active per original feature)
+    for i in range(len(X)):
+        assert X_encoded[i].sum() == 7, f"Row {i} should have exactly 7 ones"
+    
+    # Check first sample: ten_power_0=7 should have position 7 set to 1
+    assert X_encoded[0, 7] == 1, "ten_power_0=7 should set position 7 to 1"
+    assert X_encoded[0, 0:7].sum() == 0, "ten_power_0=7 should have positions 0-6 set to 0"
+    assert X_encoded[0, 8:10].sum() == 0, "ten_power_0=7 should have positions 8-9 set to 0"
+    
+    # Check first sample: ten_power_1=6 should have position 10+6=16 set to 1
+    assert X_encoded[0, 16] == 1, "ten_power_1=6 should set position 16 to 1"
+    
+    # Check second sample: ten_power_0=0 should have position 0 set to 1
+    assert X_encoded[1, 0] == 1, "ten_power_0=0 should set position 0 to 1"
+    
+    # Check third sample: all features are 9, so positions 9, 19, 29, ... 69 should be 1
+    expected_positions = [9, 19, 29, 39, 49, 59, 69]
+    for pos in expected_positions:
+        assert X_encoded[2, pos] == 1, f"Position {pos} should be 1 for all 9s"
+    
+    # Check that encoded features are binary
+    assert np.all((X_encoded == 0) | (X_encoded == 1)), "All values should be 0 or 1"
+    
+    print("✓ one_hot_encode_features tests passed")
 
 
 def test_generate_prime_numbers():
@@ -215,6 +257,7 @@ def main():
     try:
         test_is_prime()
         test_number_to_features()
+        test_one_hot_encode_features()
         test_generate_prime_numbers()
         test_generate_non_prime_numbers()
         test_number_endings()
