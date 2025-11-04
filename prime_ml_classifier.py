@@ -104,7 +104,7 @@ def number_to_features(number):
     Returns a dictionary with keys:
     - ten_power_0 through ten_power_6: individual digits
     - sum_digits: sum of all digits (useful for divisibility by 3, 9)
-    - digital_root: digital root of the number (1-9)
+    - digital_root: digital root of the number (single digit 0-9, typically 1-9 for 7-digit numbers)
     - product_digits: product of all digits
     - last_two_digits: value of last two digits (0-99)
     """
@@ -137,7 +137,7 @@ def number_to_features(number):
     features['product_digits'] = product
     
     # Last two digits value (patterns in primes)
-    features['last_two_digits'] = digit_values[0] + digit_values[1] * 10
+    features['last_two_digits'] = digit_values[1] * 10 + digit_values[0]
     
     return features
 
