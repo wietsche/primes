@@ -58,8 +58,8 @@ def test_prime_ml_classifier_nn_with_csv():
         assert "Best Parameters:" in result.stdout, "Should report best parameters"
         assert "Test F1 Score:" in result.stdout, "Should report test F1 score"
         assert "Extracting features from dataset" in result.stdout, "Should extract full feature set"
-        # Check that we're using the full feature set (110 one-hot + 8 math = 118 features)
-        assert "118" in result.stdout or "Total features:" in result.stdout, "Should use full feature set"
+        # Check that we're using the full feature set (110 one-hot + 10 math = 120 features)
+        assert "120" in result.stdout or "Total features:" in result.stdout, "Should use full feature set"
         
         print("✓ prime_ml_classifier_nn.py with CSV input tests passed")
         
