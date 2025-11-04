@@ -18,6 +18,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
 from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import cross_val_score
+from sklearn.preprocessing import StandardScaler
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -98,17 +99,46 @@ def generate_non_prime_numbers(count, min_val=1000000, max_val=9999999):
 
 
 def number_to_features(number):
-    """Convert a 7-digit number to features (individual digits).
+    """Convert a 7-digit number to features (individual digits plus mathematical properties).
     
-    Returns a dictionary with keys: ten_power_0 through ten_power_6
-    where ten_power_0 is the ones digit, ten_power_1 is the tens digit, etc.
+    Returns a dictionary with keys:
+    - ten_power_0 through ten_power_6: individual digits
+    - sum_digits: sum of all digits (useful for divisibility by 3, 9)
+    - digital_root: digital root of the number (1-9)
+    - product_digits: product of all digits
+    - last_two_digits: value of last two digits (0-99)
     """
     digits = str(number).zfill(7)  # Ensure 7 digits
     features = {}
+    
+    # Individual digits
+    digit_values = []
     for i in range(7):
         # ten_power_0 is rightmost digit (ones place)
         # ten_power_6 is leftmost digit (millions place)
-        features[f'ten_power_{i}'] = int(digits[6 - i])
+        digit_val = int(digits[6 - i])
+        features[f'ten_power_{i}'] = digit_val
+        digit_values.append(digit_val)
+    
+    # Mathematical features
+    # Sum of digits (for divisibility by 3 and 9)
+    features['sum_digits'] = sum(digit_values)
+    
+    # Digital root (iteratively sum digits until single digit)
+    dr = features['sum_digits']
+    while dr >= 10:
+        dr = sum(int(d) for d in str(dr))
+    features['digital_root'] = dr
+    
+    # Product of digits (patterns in composite numbers)
+    product = 1
+    for d in digit_values:
+        product *= d
+    features['product_digits'] = product
+    
+    # Last two digits value (patterns in primes)
+    features['last_two_digits'] = digit_values[0] + digit_values[1] * 10
+    
     return features
 
 
@@ -163,6 +193,61 @@ def one_hot_encode_features(X):
             X_encoded[:, col_idx] = (X[:, feature_idx] == value).astype(int)
     
     return X_encoded
+
+
+def prepare_features(df, scaler=None):
+    """
+    Prepare features for training, combining one-hot encoded digits with mathematical features.
+    
+    Args:
+        df: DataFrame with digit features and mathematical features
+        scaler: Optional pre-fitted StandardScaler for test set transformation
+        
+    Returns:
+        X: numpy array with combined features
+        feature_info: dict with information about feature preparation
+    """
+    # One-hot encode the digit features
+    digit_columns = [f'ten_power_{i}' for i in range(7)]
+    X_digits = df[digit_columns].values
+    X_digits_encoded = one_hot_encode_features(X_digits)
+    
+    # Get mathematical features (if they exist)
+    math_feature_columns = ['sum_digits', 'digital_root', 'product_digits', 'last_two_digits']
+    available_math_features = [col for col in math_feature_columns if col in df.columns]
+    
+    if available_math_features:
+        X_math = df[available_math_features].values
+        # Normalize mathematical features to prevent dominance
+        if scaler is None:
+            # Training phase - fit new scaler
+            scaler = StandardScaler()
+            X_math_scaled = scaler.fit_transform(X_math)
+        else:
+            # Test phase - use existing scaler
+            X_math_scaled = scaler.transform(X_math)
+        
+        # Combine one-hot encoded digits with scaled mathematical features
+        X = np.hstack([X_digits_encoded, X_math_scaled])
+        feature_info = {
+            'digit_features': 70,  # 7 digits × 10 values
+            'math_features': len(available_math_features),
+            'total_features': X.shape[1],
+            'scaler': scaler,
+            'math_feature_names': available_math_features
+        }
+    else:
+        # Only digit features available (backward compatibility)
+        X = X_digits_encoded
+        feature_info = {
+            'digit_features': 70,
+            'math_features': 0,
+            'total_features': 70,
+            'scaler': None,
+            'math_feature_names': []
+        }
+    
+    return X, feature_info
 
 
 def simple_automl(X_train, y_train, X_test, y_test):
@@ -383,44 +468,50 @@ Examples:
     # Step 2: Prepare features and labels
     print("\nStep 2: Preparing features and labels...")
     print("-" * 60)
-    feature_columns = [f'ten_power_{i}' for i in range(7)]
-    X = df[feature_columns].values
     y = df['prime'].values
     
-    print(f"Features shape: {X.shape}")
-    print(f"Labels shape: {y.shape}")
-    print(f"Feature columns: {feature_columns}")
-    
-    # Step 3: Split data (80/20)
+    # Step 3: Split data (80/20) - split before feature preparation to avoid data leakage
     print("\nStep 3: Splitting data (80% train, 20% test)...")
     print("-" * 60)
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42, stratify=y
+    
+    # Split indices to preserve all columns in both sets
+    train_idx, test_idx = train_test_split(
+        np.arange(len(df)), test_size=0.2, random_state=42, stratify=y
     )
-    print(f"Training set: {X_train.shape[0]} samples")
-    print(f"Test set: {X_test.shape[0]} samples")
+    df_train = df.iloc[train_idx].copy()
+    df_test = df.iloc[test_idx].copy()
+    y_train = df_train['prime'].values
+    y_test = df_test['prime'].values
+    
+    print(f"Training set: {len(df_train)} samples")
+    print(f"Test set: {len(df_test)} samples")
     print(f"Training set class distribution: {np.bincount(y_train)}")
     print(f"Test set class distribution: {np.bincount(y_test)}")
     
-    # Step 4: Apply one-hot encoding transformation
-    print("\nStep 4: Applying one-hot encoding transformation...")
+    # Step 4: Prepare features with one-hot encoding and mathematical features
+    print("\nStep 4: Preparing features with enhanced feature engineering...")
     print("-" * 60)
-    print(f"Original features shape: {X_train.shape}")
-    X_train_encoded = one_hot_encode_features(X_train)
-    X_test_encoded = one_hot_encode_features(X_test)
-    print(f"One-hot encoded features shape: {X_train_encoded.shape}")
-    print(f"Each of the 7 features (ten_power_0 to ten_power_6) is now represented by 10 binary features")
-    print(f"Total features: 7 × 10 = 70 binary features")
+    X_train, feature_info = prepare_features(df_train)
+    X_test, _ = prepare_features(df_test, scaler=feature_info['scaler'])
+    
+    print(f"Feature preparation complete:")
+    print(f"  - Digit features (one-hot encoded): {feature_info['digit_features']}")
+    print(f"  - Mathematical features: {feature_info['math_features']}")
+    if feature_info['math_feature_names']:
+        print(f"    ({', '.join(feature_info['math_feature_names'])})")
+    print(f"  - Total features: {feature_info['total_features']}")
+    print(f"Training set shape: {X_train.shape}")
+    print(f"Test set shape: {X_test.shape}")
     
     # Step 5: AutoML - Train and select best model
     print("\nStep 5: Training models with AutoML...")
-    best_model, best_name, cv_results = simple_automl(X_train_encoded, y_train, X_test_encoded, y_test)
+    best_model, best_name, cv_results = simple_automl(X_train, y_train, X_test, y_test)
     
     # Step 6: Evaluate on test set
     print("\nStep 6: Evaluating best model on test set...")
     print("="*60)
-    y_pred = best_model.predict(X_test_encoded)
-    y_pred_proba = best_model.predict_proba(X_test_encoded)[:, 1]
+    y_pred = best_model.predict(X_test)
+    y_pred_proba = best_model.predict_proba(X_test)[:, 1]
     
     # Calculate metrics
     test_auc = roc_auc_score(y_test, y_pred_proba)
@@ -443,9 +534,9 @@ Examples:
     print("Summary")
     print("="*60)
     print(f"Total samples: {len(df)} ({df['prime'].sum()} primes + {len(df) - df['prime'].sum()} non-primes)")
-    print(f"Training samples: {len(X_train)} (80%)")
-    print(f"Test samples: {len(X_test)} (20%)")
-    print(f"Features: 7 digit positions transformed to 70 one-hot encoded features")
+    print(f"Training samples: {len(df_train)} (80%)")
+    print(f"Test samples: {len(df_test)} (20%)")
+    print(f"Features: {feature_info['total_features']} ({feature_info['digit_features']} digit + {feature_info['math_features']} mathematical)")
     print(f"Best model: {best_name}")
     print(f"Test AUC: {test_auc:.4f}")
     print("="*60)
