@@ -64,7 +64,7 @@ def neural_network_hyperparameter_search(X_train, y_train, X_test, y_test, cv=5)
     }
     
     # Create MLPClassifier with fixed random state
-    mlp = MLPClassifier(random_state=42, early_stopping=True)
+    mlp = MLPClassifier(random_state=42, early_stopping=True, validation_fraction=0.1)
     
     # Use F1 score as the scoring metric
     f1_scorer = make_scorer(f1_score)
@@ -72,7 +72,11 @@ def neural_network_hyperparameter_search(X_train, y_train, X_test, y_test, cv=5)
     print("\n" + "="*60)
     print("Neural Network Hyperparameter Search")
     print("="*60)
-    print(f"Parameter grid size: {len(param_grid['hidden_layer_sizes']) * len(param_grid['activation']) * len(param_grid['alpha']) * len(param_grid['learning_rate'])} combinations")
+    # Calculate total combinations dynamically
+    total_combinations = 1
+    for param_values in param_grid.values():
+        total_combinations *= len(param_values)
+    print(f"Parameter grid size: {total_combinations} combinations")
     print(f"Cross-validation folds: {cv}")
     print(f"Scoring metric: F1 Score")
     print("="*60)
