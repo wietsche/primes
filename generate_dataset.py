@@ -1,8 +1,7 @@
-#!/usr/bin/env python3
 """
 Generate Prime Number Dataset CSV
 
-This script generates a dataset of 7-digit prime and non-prime numbers,
+This script generates a dataset of 11-digit prime and non-prime numbers,
 extracts digit features, and saves to CSV format.
 It allows customization of the number of samples to generate.
 """
@@ -26,7 +25,7 @@ except ImportError as e:
 def main():
     """Main function to generate dataset CSV."""
     parser = argparse.ArgumentParser(
-        description='Generate a dataset of 7-digit prime and non-prime numbers',
+        description='Generate a dataset of 11-digit prime and non-prime numbers',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -68,15 +67,15 @@ Examples:
     parser.add_argument(
         '--min-value',
         type=int,
-        default=1000000,
-        help='Minimum value for 7-digit numbers (default: 1000000)'
+        default=10000000000,
+        help='Minimum value for 11-digit numbers (default: 10000000000)'
     )
     
     parser.add_argument(
         '--max-value',
         type=int,
-        default=9999999,
-        help='Maximum value for 7-digit numbers (default: 9999999)'
+        default=99999999999,
+        help='Maximum value for 11-digit numbers (default: 99999999999)'
     )
     
     args = parser.parse_args()
@@ -90,8 +89,8 @@ Examples:
         print("Error: --non-primes must be greater than 0", file=sys.stderr)
         sys.exit(1)
     
-    if args.min_value < 1000000 or args.max_value > 9999999:
-        print("Error: min-value and max-value must be within 7-digit range (1000000-9999999)", file=sys.stderr)
+    if args.min_value < 10000000000 or args.max_value > 99999999999:
+        print("Error: min-value and max-value must be within 11-digit range (10000000000-99999999999)", file=sys.stderr)
         sys.exit(1)
     
     if args.min_value >= args.max_value:
@@ -157,7 +156,7 @@ Examples:
     print(f"Total samples: {len(df)}")
     print(f"  - Prime samples: {args.primes}")
     print(f"  - Non-prime samples: {args.non_primes}")
-    print(f"Features: 7 digit positions (ten_power_0 to ten_power_6)")
+    print(f"Features: 11 digit positions (ten_power_0 to ten_power_10) + mathematical features")
     print(f"Output file: {args.output}")
     print("="*60)
     print("\nDataset preview:")

@@ -8,6 +8,17 @@ import tempfile
 import pandas as pd
 import subprocess
 
+# Import constants from prime_ml_classifier to avoid duplication
+try:
+    from prime_ml_classifier import NUM_DIGITS
+except ImportError:
+    # Fallback if import fails (shouldn't happen in normal execution)
+    NUM_DIGITS = 11
+
+# Calculate expected column count: 
+# NUM_DIGITS basic + NUM_DIGITS*10 one-hot + 10 math features + 2 meta (prime, number)
+EXPECTED_COLUMNS = NUM_DIGITS + (NUM_DIGITS * 10) + 10 + 2
+
 
 def test_help_message():
     """Test that help message works."""
@@ -47,12 +58,29 @@ def test_default_generation():
         # Verify CSV content
         df = pd.read_csv(tmp_path)
         assert df.shape[0] == 200, "Should have 200 samples"
-        assert df.shape[1] == 9, "Should have 9 columns"
+        # Use calculated expected columns based on NUM_DIGITS
+        assert df.shape[1] == EXPECTED_COLUMNS, f"Should have {EXPECTED_COLUMNS} columns, got {df.shape[1]}"
         
-        # Check column names
-        expected_cols = ['ten_power_0', 'ten_power_1', 'ten_power_2', 'ten_power_3',
-                         'ten_power_4', 'ten_power_5', 'ten_power_6', 'prime', 'number']
-        assert list(df.columns) == expected_cols, "Should have correct columns"
+        # Check that basic digit columns exist
+        for i in range(NUM_DIGITS):
+            assert f'ten_power_{i}' in df.columns, f"Should have ten_power_{i}"
+        
+        # Check for one-hot encoded columns
+        assert 'ten_power_0_is_0' in df.columns, "Should have one-hot encoded features"
+        assert 'ten_power_10_is_9' in df.columns, "Should have one-hot encoded features for all positions"
+        
+        # Check mathematical features
+        assert 'sum_digits' in df.columns, "Should have sum_digits"
+        assert 'digital_root' in df.columns, "Should have digital_root"
+        assert 'product_digits' in df.columns, "Should have product_digits"
+        assert 'last_two_digits' in df.columns, "Should have last_two_digits"
+        assert 'alternating_digit_sum' in df.columns, "Should have alternating_digit_sum"
+        assert 'mod_2' in df.columns, "Should have mod_2"
+        assert 'mod_11' in df.columns, "Should have mod_11"
+        
+        # Check meta columns
+        assert 'prime' in df.columns, "Should have prime label"
+        assert 'number' in df.columns, "Should have original number"
         
         # Check prime distribution
         prime_count = df['prime'].sum()
@@ -148,17 +176,19 @@ def test_data_integrity():
         # Verify digit extraction for each sample
         for idx, row in df.iterrows():
             number = row['number']
-            digits = str(number).zfill(7)
+            digits = str(number).zfill(NUM_DIGITS)
             
             # Verify each digit position
-            for i in range(7):
-                expected_digit = int(digits[6 - i])
+            for i in range(NUM_DIGITS):
+                expected_digit = int(digits[NUM_DIGITS - 1 - i])
                 actual_digit = row[f'ten_power_{i}']
                 assert expected_digit == actual_digit, \
                     f"Digit mismatch for number {number} at position {i}"
             
-            # Verify number is 7-digit
-            assert 1000000 <= number <= 9999999, f"{number} should be 7-digit"
+            # Verify number is NUM_DIGITS-digit
+            min_val = 10 ** (NUM_DIGITS - 1)
+            max_val = (10 ** NUM_DIGITS) - 1
+            assert min_val <= number <= max_val, f"{number} should be {NUM_DIGITS}-digit"
         
         print("✓ Data integrity verified for all samples")
         

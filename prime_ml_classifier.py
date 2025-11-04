@@ -12,7 +12,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import roc_auc_score, roc_curve, classification_report, confusion_matrix
+from sklearn.metrics import roc_auc_score, roc_curve, classification_report, confusion_matrix, precision_recall_fscore_support
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
@@ -306,47 +306,110 @@ def simple_automl(X_train, y_train, X_test, y_test):
     return best_model, best_name, results
 
 
-def plot_evaluation_metrics(y_test, y_pred, y_pred_proba, model_name, output_dir='.'):
-    """Plot ROC curve and AUC."""
+def plot_evaluation_metrics(y_test, y_pred, y_pred_proba, model_name, cv_results, output_dir='.'):
+    """Plot ROC curve, AUC, confusion matrix, and model comparison."""
     # Calculate ROC curve
     fpr, tpr, thresholds = roc_curve(y_test, y_pred_proba)
     auc_score = roc_auc_score(y_test, y_pred_proba)
     
-    # Create figure with subplots
-    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+    # Calculate per-class metrics
+    precision_per_class, recall_per_class, f1_per_class, support_per_class = precision_recall_fscore_support(
+        y_test, y_pred, average=None
+    )
+    
+    # Create figure with 2x2 subplots
+    fig, axes = plt.subplots(2, 2, figsize=(16, 12))
+    fig.suptitle(f'AutoML Model Evaluation - {model_name}\nAUC: {auc_score:.4f}', 
+                 fontsize=16, fontweight='bold', y=0.995)
     
     # Plot ROC Curve
-    axes[0].plot(fpr, tpr, color='darkorange', lw=2, 
+    axes[0, 0].plot(fpr, tpr, color='darkorange', lw=2, 
                  label=f'ROC curve (AUC = {auc_score:.4f})')
-    axes[0].plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--', label='Random Classifier')
-    axes[0].set_xlim([0.0, 1.0])
-    axes[0].set_ylim([0.0, 1.05])
-    axes[0].set_xlabel('False Positive Rate', fontsize=12)
-    axes[0].set_ylabel('True Positive Rate', fontsize=12)
-    axes[0].set_title(f'ROC Curve - {model_name}', fontsize=14, fontweight='bold')
-    axes[0].legend(loc="lower right", fontsize=10)
-    axes[0].grid(alpha=0.3)
+    axes[0, 0].plot([0, 1], [0, 1], color='navy', lw=2, linestyle='--', label='Random Classifier')
+    axes[0, 0].set_xlim([0.0, 1.0])
+    axes[0, 0].set_ylim([0.0, 1.05])
+    axes[0, 0].set_xlabel('False Positive Rate', fontsize=12)
+    axes[0, 0].set_ylabel('True Positive Rate', fontsize=12)
+    axes[0, 0].set_title('ROC Curve', fontsize=14, fontweight='bold')
+    axes[0, 0].legend(loc="lower right", fontsize=10)
+    axes[0, 0].grid(alpha=0.3)
     
     # Plot Confusion Matrix
     cm = confusion_matrix(y_test, y_pred)
-    im = axes[1].imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
-    axes[1].figure.colorbar(im, ax=axes[1])
-    axes[1].set(xticks=np.arange(cm.shape[1]),
+    im = axes[0, 1].imshow(cm, interpolation='nearest', cmap=plt.cm.Blues)
+    axes[0, 1].figure.colorbar(im, ax=axes[0, 1])
+    axes[0, 1].set(xticks=np.arange(cm.shape[1]),
                 yticks=np.arange(cm.shape[0]),
                 xticklabels=['Non-Prime', 'Prime'],
                 yticklabels=['Non-Prime', 'Prime'],
-                title=f'Confusion Matrix - {model_name}',
+                title='Confusion Matrix',
                 ylabel='True label',
                 xlabel='Predicted label')
+    axes[0, 1].set_title('Confusion Matrix', fontsize=14, fontweight='bold')
     
     # Add text annotations to confusion matrix
     thresh = cm.max() / 2.
     for i in range(cm.shape[0]):
         for j in range(cm.shape[1]):
-            axes[1].text(j, i, format(cm[i, j], 'd'),
+            axes[0, 1].text(j, i, format(cm[i, j], 'd'),
                         ha="center", va="center",
                         color="white" if cm[i, j] > thresh else "black",
                         fontsize=16)
+    
+    # Plot Model Comparison (Cross-Validation AUC)
+    model_names = list(cv_results.keys())
+    cv_aucs = [cv_results[name]['mean_cv_auc'] for name in model_names]
+    cv_stds = [cv_results[name]['std_cv_auc'] for name in model_names]
+    
+    # Sort by AUC
+    sorted_indices = np.argsort(cv_aucs)[::-1]
+    model_names = [model_names[i] for i in sorted_indices]
+    cv_aucs = [cv_aucs[i] for i in sorted_indices]
+    cv_stds = [cv_stds[i] for i in sorted_indices]
+    
+    colors = ['gold' if name == model_name else 'skyblue' for name in model_names]
+    bars = axes[1, 0].barh(model_names, cv_aucs, xerr=cv_stds, 
+                           color=colors, edgecolor='black', capsize=5)
+    axes[1, 0].set_xlabel('Cross-Validation AUC Score', fontsize=12)
+    axes[1, 0].set_title('Model Comparison (5-Fold CV)', fontsize=14, fontweight='bold')
+    axes[1, 0].set_xlim([min(cv_aucs) - 0.05, 1.0])
+    axes[1, 0].grid(axis='x', alpha=0.3)
+    
+    # Add value labels on bars
+    for i, (bar, auc, std) in enumerate(zip(bars, cv_aucs, cv_stds)):
+        axes[1, 0].text(bar.get_width() + 0.01, bar.get_y() + bar.get_height()/2,
+                       f'{auc:.4f} ± {std:.4f}',
+                       ha='left', va='center', fontsize=9)
+    
+    # Plot Per-Class Metrics
+    metrics_labels = ['Precision', 'Recall', 'F1-Score']
+    x = np.arange(len(metrics_labels))
+    width = 0.35
+    
+    non_prime_metrics = [precision_per_class[0], recall_per_class[0], f1_per_class[0]]
+    prime_metrics = [precision_per_class[1], recall_per_class[1], f1_per_class[1]]
+    
+    bars1 = axes[1, 1].bar(x - width/2, non_prime_metrics, width, label='Non-Prime', 
+                           color='skyblue', edgecolor='black')
+    bars2 = axes[1, 1].bar(x + width/2, prime_metrics, width, label='Prime',
+                           color='lightcoral', edgecolor='black')
+    
+    axes[1, 1].set_xlabel('Metrics', fontsize=12)
+    axes[1, 1].set_ylabel('Score', fontsize=12)
+    axes[1, 1].set_title('Per-Class Performance Metrics', fontsize=14, fontweight='bold')
+    axes[1, 1].set_xticks(x)
+    axes[1, 1].set_xticklabels(metrics_labels)
+    axes[1, 1].legend(loc='lower right')
+    axes[1, 1].set_ylim([0, 1.05])
+    axes[1, 1].grid(axis='y', alpha=0.3)
+    
+    # Add value labels on bars
+    for bars in [bars1, bars2]:
+        for bar in bars:
+            height = bar.get_height()
+            axes[1, 1].text(bar.get_x() + bar.get_width()/2., height,
+                           f'{height:.3f}',
+                           ha='center', va='bottom', fontsize=9)
     
     plt.tight_layout()
     output_path = os.path.join(output_dir, 'model_evaluation.png')
@@ -531,7 +594,7 @@ Examples:
     # Step 7: Plot evaluation metrics
     print("\nStep 7: Generating evaluation plots...")
     print("-" * 60)
-    plot_evaluation_metrics(y_test, y_pred, y_pred_proba, best_name, output_dir)
+    plot_evaluation_metrics(y_test, y_pred, y_pred_proba, best_name, cv_results, output_dir)
     
     # Summary
     print("\n" + "="*60)

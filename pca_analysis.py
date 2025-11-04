@@ -1,8 +1,7 @@
-#!/usr/bin/env python3
 """
 Principal Component Analysis (PCA) on Prime Dataset
 
-This script performs PCA on the 7-digit prime dataset to visualize
+This script performs PCA on the prime dataset to visualize
 primes and non-primes in 2D space using two side-by-side plots.
 """
 
@@ -28,7 +27,7 @@ def load_dataset(csv_path):
         df = pd.read_csv(csv_path)
         
         # Validate required columns
-        required_columns = [f'ten_power_{i}' for i in range(7)] + ['prime']
+        required_columns = [f'ten_power_{i}' for i in range(11)] + ['prime']
         
         missing_columns = set(required_columns) - set(df.columns)
         if missing_columns:
@@ -62,8 +61,8 @@ def perform_pca_analysis(df):
     Returns:
         tuple: (pca_components, prime_mask, pca_model, scaler)
     """
-    # Extract features (7 digit positions)
-    feature_columns = [f'ten_power_{i}' for i in range(7)]
+    # Extract features (11 digit positions)
+    feature_columns = [f'ten_power_{i}' for i in range(11)]
     X = df[feature_columns].values
     
     # Get prime labels (1 for prime, 0 for non-prime)
@@ -132,7 +131,7 @@ def plot_pca_results(X_pca, prime_mask, pca, output_path='pca_analysis.png'):
                 verticalalignment='top', bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
     
     # Overall title
-    fig.suptitle('Principal Component Analysis of 7-Digit Numbers\n(Based on Individual Digit Features)', 
+    fig.suptitle('Principal Component Analysis of 11-Digit Numbers\n(Based on Individual Digit Features)', 
                  fontsize=16, fontweight='bold', y=1.02)
     
     plt.tight_layout()
@@ -198,7 +197,7 @@ Examples:
     print(f"Primes: {num_primes}, Non-primes: {num_non_primes}")
     
     # Step 2: Perform PCA
-    print("\nStep 2: Performing PCA (7D → 2D)...")
+    print("\nStep 2: Performing PCA (11D → 2D)...")
     print("-" * 60)
     X_pca, prime_mask, pca, scaler = perform_pca_analysis(df)
     print(f"✓ PCA completed")
@@ -218,7 +217,7 @@ Examples:
     print(f"Total samples analyzed: {len(df)}")
     print(f"  - Prime samples: {num_primes}")
     print(f"  - Non-prime samples: {num_non_primes}")
-    print(f"Original features: 7 (digit positions)")
+    print(f"Original features: 11 (digit positions)")
     print(f"PCA components: 2")
     print(f"Variance explained by PC1: {pca.explained_variance_ratio_[0]*100:.2f}%")
     print(f"Variance explained by PC2: {pca.explained_variance_ratio_[1]*100:.2f}%")

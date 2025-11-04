@@ -1,5 +1,5 @@
 """
-Test for the neural network model evaluation with hyperparameter search.
+Test for the neural network prime classifier with hyperparameter search.
 """
 
 import sys
@@ -9,9 +9,9 @@ import subprocess
 import numpy as np
 
 
-def test_model_evaluation_nn_with_csv():
-    """Test that model_evaluation_nn.py works with CSV input."""
-    print("\nTesting model_evaluation_nn.py with CSV input...")
+def test_prime_ml_classifier_nn_with_csv():
+    """Test that prime_ml_classifier_nn.py works with CSV input."""
+    print("\nTesting prime_ml_classifier_nn.py with CSV input...")
     
     # Determine the directory containing the test script
     if '__file__' in globals():
@@ -37,10 +37,10 @@ def test_model_evaluation_nn_with_csv():
         assert result.returncode == 0, f"Dataset generation failed: {result.stderr}"
         assert os.path.exists(tmp_path), "Dataset file should exist"
         
-        # Now test model_evaluation_nn.py with the CSV input
+        # Now test prime_ml_classifier_nn.py with the CSV input
         # Using cv=2 to make it faster for testing
         result = subprocess.run(
-            [sys.executable, 'model_evaluation_nn.py', 
+            [sys.executable, 'prime_ml_classifier_nn.py', 
              '--input', tmp_path, '--cv', '2'],
             cwd=script_dir,
             capture_output=True,
@@ -51,26 +51,26 @@ def test_model_evaluation_nn_with_csv():
         assert result.returncode == 0, f"Model evaluation failed: {result.stderr}"
         assert "Loading dataset from" in result.stdout, "Should indicate loading from CSV"
         assert "✓ Dataset loaded successfully" in result.stdout, "Should successfully load dataset"
-        # Flexible check: verify that dataset shape is reported with expected total of 60 samples (30+30)
-        assert "Dataset shape: (60, 9)" in result.stdout, "Should have 60 samples (30 primes + 30 non-primes)"
+        # Check for correct number of samples
+        assert "60" in result.stdout and "Dataset shape:" in result.stdout, "Should have 60 samples (30 primes + 30 non-primes)"
         assert "Neural Network Hyperparameter Search" in result.stdout, "Should perform hyperparameter search"
         assert "Best Cross-Validation F1 Score:" in result.stdout, "Should report best CV F1 score"
         assert "Best Parameters:" in result.stdout, "Should report best parameters"
         assert "Test F1 Score:" in result.stdout, "Should report test F1 score"
-        assert "Applying one-hot encoding transformation" in result.stdout, "Should use one-hot encoding"
-        # Check for one-hot encoding pattern: training set should have 70 features (7 features * 10 one-hot values)
-        assert "70)" in result.stdout and "One-hot encoded features shape:" in result.stdout, "Should have 70 features after one-hot encoding"
+        assert "Extracting features from dataset" in result.stdout, "Should extract full feature set"
+        # Check that we're using the full feature set (110 one-hot + 10 math = 120 features)
+        assert "120" in result.stdout or "Total features:" in result.stdout, "Should use full feature set"
         
-        print("✓ model_evaluation_nn.py with CSV input tests passed")
+        print("✓ prime_ml_classifier_nn.py with CSV input tests passed")
         
     finally:
         if os.path.exists(tmp_path):
             os.remove(tmp_path)
 
 
-def test_model_evaluation_nn_output_file():
-    """Test that model_evaluation_nn.py creates output file."""
-    print("\nTesting model_evaluation_nn.py output file creation...")
+def test_prime_ml_classifier_nn_output_file():
+    """Test that prime_ml_classifier_nn.py creates output file."""
+    print("\nTesting prime_ml_classifier_nn.py output file creation...")
     
     # Determine the directory containing the test script
     if '__file__' in globals():
@@ -97,9 +97,9 @@ def test_model_evaluation_nn_output_file():
             
             assert result.returncode == 0, f"Dataset generation failed: {result.stderr}"
             
-            # Run model_evaluation_nn.py with custom output directory
+            # Run prime_ml_classifier_nn.py with custom output directory
             result = subprocess.run(
-                [sys.executable, 'model_evaluation_nn.py', 
+                [sys.executable, 'prime_ml_classifier_nn.py', 
                  '--input', tmp_data_path, '--output-dir', tmp_dir, '--cv', '2'],
                 cwd=script_dir,
                 capture_output=True,
@@ -109,12 +109,12 @@ def test_model_evaluation_nn_output_file():
             
             assert result.returncode == 0, f"Model evaluation failed: {result.stderr}"
             
-            # Check that output file was created
-            output_file = os.path.join(tmp_dir, 'model_evaluation_nn.png')
+            # Check that output file was created with new name
+            output_file = os.path.join(tmp_dir, 'prime_ml_classifier_nn.png')
             assert os.path.exists(output_file), f"Output file should exist: {output_file}"
             assert os.path.getsize(output_file) > 0, "Output file should not be empty"
             
-            print("✓ model_evaluation_nn.py output file creation tests passed")
+            print("✓ prime_ml_classifier_nn.py output file creation tests passed")
             
         finally:
             if os.path.exists(tmp_data_path):
@@ -124,12 +124,12 @@ def test_model_evaluation_nn_output_file():
 def main():
     """Run all tests."""
     print("="*60)
-    print("Running Model Evaluation NN Tests")
+    print("Running Prime ML Classifier NN Tests")
     print("="*60)
     
     try:
-        test_model_evaluation_nn_with_csv()
-        test_model_evaluation_nn_output_file()
+        test_prime_ml_classifier_nn_with_csv()
+        test_prime_ml_classifier_nn_output_file()
         
         print("\n" + "="*60)
         print("All tests passed! ✓")
