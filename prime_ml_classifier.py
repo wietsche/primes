@@ -1,6 +1,6 @@
 """
 Prime Number ML Classifier
-This script generates a dataset of 7-digit prime and non-prime numbers,
+This script generates a dataset of 11-digit prime and non-prime numbers,
 extracts digit features, and trains an AutoML model to classify them.
 """
 
@@ -24,6 +24,9 @@ warnings.filterwarnings('ignore')
 
 # Constants
 MAX_GENERATION_ATTEMPTS_MULTIPLIER = 1000  # Max attempts = count * multiplier
+NUM_DIGITS = 11  # Number of digits in generated numbers
+MIN_VAL = 10**10  # Minimum 11-digit number (10000000000)
+MAX_VAL = 10**11 - 1  # Maximum 11-digit number (99999999999)
 
 
 def is_prime(n):
@@ -40,8 +43,8 @@ def is_prime(n):
     return True
 
 
-def generate_prime_numbers(count, min_val=1000000, max_val=9999999):
-    """Generate a specified number of 7-digit prime numbers.
+def generate_prime_numbers(count, min_val=MIN_VAL, max_val=MAX_VAL):
+    """Generate a specified number of 11-digit prime numbers.
     Only generates numbers that don't end in 0, 2, or 5."""
     primes = []
     attempts = 0
@@ -69,8 +72,8 @@ def generate_prime_numbers(count, min_val=1000000, max_val=9999999):
     return primes
 
 
-def generate_non_prime_numbers(count, min_val=1000000, max_val=9999999):
-    """Generate a specified number of 7-digit non-prime numbers.
+def generate_non_prime_numbers(count, min_val=MIN_VAL, max_val=MAX_VAL):
+    """Generate a specified number of 11-digit non-prime numbers.
     Only generates numbers that don't end in 0, 2, or 5."""
     non_primes = []
     attempts = 0
@@ -99,26 +102,39 @@ def generate_non_prime_numbers(count, min_val=1000000, max_val=9999999):
 
 
 def number_to_features(number):
-    """Convert a 7-digit number to features (individual digits plus mathematical properties).
+    """Convert an 11-digit number to features with all preprocessing included.
+    
+    This function generates a complete feature vector ready for ML training/inference,
+    including one-hot encoded digits and mathematical properties. No further
+    transformation is needed.
     
     Returns a dictionary with keys:
-    - ten_power_0 through ten_power_6: individual digits
-    - sum_digits: sum of all digits (useful for divisibility by 3, 9)
-    - digital_root: digital root of the number (single digit 0-9, typically 1-9 for 7-digit numbers)
+    - ten_power_0 through ten_power_10: individual digits
+    - ten_power_X_is_Y: one-hot encoded features (11 digits × 10 values = 110 features)
+    - sum_digits: sum of all digits (for divisibility by 3, 9)
+    - digital_root: digital root of the number (single digit 0-9)
     - product_digits: product of all digits
     - last_two_digits: value of last two digits (0-99)
+    - alternating_digit_sum: alternating sum for divisibility by 11
+    - mod_2, mod_3, mod_5, mod_7, mod_11: modulo by small primes
     """
-    digits = str(number).zfill(7)  # Ensure 7 digits
+    digits = str(number).zfill(NUM_DIGITS)  # Ensure correct number of digits
     features = {}
     
     # Individual digits
     digit_values = []
-    for i in range(7):
+    for i in range(NUM_DIGITS):
         # ten_power_0 is rightmost digit (ones place)
-        # ten_power_6 is leftmost digit (millions place)
-        digit_val = int(digits[6 - i])
+        # ten_power_10 is leftmost digit (10 billions place)
+        digit_val = int(digits[NUM_DIGITS - 1 - i])
         features[f'ten_power_{i}'] = digit_val
         digit_values.append(digit_val)
+    
+    # One-hot encode each digit position directly
+    for i in range(NUM_DIGITS):
+        digit_val = digit_values[i]
+        for val in range(10):
+            features[f'ten_power_{i}_is_{val}'] = 1 if digit_val == val else 0
     
     # Mathematical features
     # Sum of digits (for divisibility by 3 and 9)
@@ -138,6 +154,18 @@ def number_to_features(number):
     
     # Last two digits value (patterns in primes)
     features['last_two_digits'] = digit_values[1] * 10 + digit_values[0]
+    
+    # Alternating digit sum (for divisibility by 11)
+    # Compute: d0 - d1 + d2 - d3 + ... (starting from ones place)
+    alt_sum = sum(digit_values[i] if i % 2 == 0 else -digit_values[i] for i in range(NUM_DIGITS))
+    features['alternating_digit_sum'] = alt_sum
+    
+    # Modulo features by small primes
+    features['mod_2'] = number % 2
+    features['mod_3'] = number % 3
+    features['mod_5'] = number % 5
+    features['mod_7'] = number % 7
+    features['mod_11'] = number % 11
     
     return features
 
@@ -195,57 +223,36 @@ def one_hot_encode_features(X):
     return X_encoded
 
 
-def prepare_features(df, scaler=None):
+def prepare_features(df):
     """
-    Prepare features for training, combining one-hot encoded digits with mathematical features.
+    Extract features from dataframe. All features are already computed in the CSV,
+    no transformation needed.
     
     Args:
-        df: DataFrame with digit features and mathematical features
-        scaler: Optional pre-fitted StandardScaler for test set transformation
+        df: DataFrame with all features already computed
         
     Returns:
-        X: numpy array with combined features
-        feature_info: dict with information about feature preparation
+        X: numpy array with features
+        feature_info: dict with information about features
     """
-    # One-hot encode the digit features
-    digit_columns = [f'ten_power_{i}' for i in range(7)]
-    X_digits = df[digit_columns].values
-    X_digits_encoded = one_hot_encode_features(X_digits)
+    # Exclude non-feature columns
+    exclude_cols = ['prime', 'number'] + [f'ten_power_{i}' for i in range(NUM_DIGITS)]
     
-    # Get mathematical features (if they exist)
-    math_feature_columns = ['sum_digits', 'digital_root', 'product_digits', 'last_two_digits']
-    available_math_features = [col for col in math_feature_columns if col in df.columns]
+    # Get all feature columns (one-hot encoded + mathematical features)
+    feature_cols = [col for col in df.columns if col not in exclude_cols]
     
-    if available_math_features:
-        X_math = df[available_math_features].values
-        # Normalize mathematical features to prevent dominance
-        if scaler is None:
-            # Training phase - fit new scaler
-            scaler = StandardScaler()
-            X_math_scaled = scaler.fit_transform(X_math)
-        else:
-            # Test phase - use existing scaler
-            X_math_scaled = scaler.transform(X_math)
-        
-        # Combine one-hot encoded digits with scaled mathematical features
-        X = np.hstack([X_digits_encoded, X_math_scaled])
-        feature_info = {
-            'digit_features': 70,  # 7 digits × 10 values
-            'math_features': len(available_math_features),
-            'total_features': X.shape[1],
-            'scaler': scaler,
-            'math_feature_names': available_math_features
-        }
-    else:
-        # Only digit features available (backward compatibility)
-        X = X_digits_encoded
-        feature_info = {
-            'digit_features': 70,
-            'math_features': 0,
-            'total_features': 70,
-            'scaler': None,
-            'math_feature_names': []
-        }
+    X = df[feature_cols].values
+    
+    # Count different feature types
+    onehot_features = [col for col in feature_cols if '_is_' in col]
+    math_features = [col for col in feature_cols if '_is_' not in col]
+    
+    feature_info = {
+        'onehot_features': len(onehot_features),
+        'math_features': len(math_features),
+        'total_features': len(feature_cols),
+        'feature_names': feature_cols
+    }
     
     return X, feature_info
 
@@ -360,9 +367,8 @@ def load_dataset_from_csv(csv_path):
     try:
         df = pd.read_csv(csv_path)
         
-        # Validate required columns
-        required_columns = ['ten_power_0', 'ten_power_1', 'ten_power_2', 'ten_power_3',
-                           'ten_power_4', 'ten_power_5', 'ten_power_6', 'prime', 'number']
+        # Validate required columns (basic digit columns, prime label, and number)
+        required_columns = [f'ten_power_{i}' for i in range(NUM_DIGITS)] + ['prime', 'number']
         
         missing_columns = set(required_columns) - set(df.columns)
         if missing_columns:
@@ -442,7 +448,7 @@ Examples:
         print(f"\nFirst few samples:")
         print(df.head(10))
     else:
-        print("\nStep 1: Generating 7-digit numbers...")
+        print("\nStep 1: Generating 11-digit numbers...")
         print("-" * 60)
         prime_numbers = generate_prime_numbers(100)
         print(f"Generated {len(prime_numbers)} prime numbers")
@@ -453,7 +459,7 @@ Examples:
         print(f"Sample non-primes: {non_prime_numbers[:5]}")
         
         # Step 2: Create dataset
-        print("\nStep 2: Creating dataset with digit features...")
+        print("\nStep 2: Creating dataset with all features...")
         print("-" * 60)
         df = create_dataset(prime_numbers, non_prime_numbers)
         print(f"Dataset shape: {df.shape}")
@@ -488,17 +494,15 @@ Examples:
     print(f"Training set class distribution: {np.bincount(y_train)}")
     print(f"Test set class distribution: {np.bincount(y_test)}")
     
-    # Step 4: Prepare features with one-hot encoding and mathematical features
-    print("\nStep 4: Preparing features with enhanced feature engineering...")
+    # Step 4: Extract features (all preprocessing already done in CSV)
+    print("\nStep 4: Extracting features from dataset...")
     print("-" * 60)
     X_train, feature_info = prepare_features(df_train)
-    X_test, _ = prepare_features(df_test, scaler=feature_info['scaler'])
+    X_test, _ = prepare_features(df_test)
     
-    print(f"Feature preparation complete:")
-    print(f"  - Digit features (one-hot encoded): {feature_info['digit_features']}")
+    print(f"Feature extraction complete:")
+    print(f"  - One-hot encoded digit features: {feature_info['onehot_features']}")
     print(f"  - Mathematical features: {feature_info['math_features']}")
-    if feature_info['math_feature_names']:
-        print(f"    ({', '.join(feature_info['math_feature_names'])})")
     print(f"  - Total features: {feature_info['total_features']}")
     print(f"Training set shape: {X_train.shape}")
     print(f"Test set shape: {X_test.shape}")
@@ -536,7 +540,7 @@ Examples:
     print(f"Total samples: {len(df)} ({df['prime'].sum()} primes + {len(df) - df['prime'].sum()} non-primes)")
     print(f"Training samples: {len(df_train)} (80%)")
     print(f"Test samples: {len(df_test)} (20%)")
-    print(f"Features: {feature_info['total_features']} ({feature_info['digit_features']} digit + {feature_info['math_features']} mathematical)")
+    print(f"Features: {feature_info['total_features']} ({feature_info['onehot_features']} one-hot + {feature_info['math_features']} mathematical)")
     print(f"Best model: {best_name}")
     print(f"Test AUC: {test_auc:.4f}")
     print("="*60)
