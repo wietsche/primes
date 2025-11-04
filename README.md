@@ -12,7 +12,7 @@ This project generates a dataset of 200 11-digit numbers (100 primes and 100 non
 - **Data Generation**: Automatically generates 100 11-digit prime and 100 non-prime numbers (default)
 - **Advanced Feature Engineering**: Converts each number into rich features:
   - 11 digit position features (one-hot encoded: `ten_power_0` through `ten_power_10`)
-  - 8 mathematical features based on prime number properties:
+  - 10 mathematical features based on prime number properties:
     - Sum of digits (for divisibility rules)
     - Digital root (iterative digit sum)
     - Product of digits
@@ -156,7 +156,7 @@ Each sample has the following features:
 - `prime`: Label (1 for prime, 0 for non-prime)
 - `number`: The original 11-digit number
 
-**Note:** The classifier uses 110 one-hot encoded features for the digits plus 8 mathematical features, totaling 118 features for training.
+**Note:** The classifier uses 110 one-hot encoded features for the digits plus 10 mathematical features, totaling 120 features for training.
 
 ## Results
 

@@ -67,14 +67,14 @@ Examples:
     parser.add_argument(
         '--min-value',
         type=int,
-        default=1000000,
+        default=10000000000,
         help='Minimum value for 11-digit numbers (default: 10000000000)'
     )
     
     parser.add_argument(
         '--max-value',
         type=int,
-        default=9999999,
+        default=99999999999,
         help='Maximum value for 11-digit numbers (default: 99999999999)'
     )
     
@@ -89,7 +89,7 @@ Examples:
         print("Error: --non-primes must be greater than 0", file=sys.stderr)
         sys.exit(1)
     
-    if args.min_value < 1000000 or args.max_value > 9999999:
+    if args.min_value < 10000000000 or args.max_value > 99999999999:
         print("Error: min-value and max-value must be within 11-digit range (10000000000-99999999999)", file=sys.stderr)
         sys.exit(1)
     

@@ -97,7 +97,7 @@ def test_pca_analysis_custom_dataset():
         assert os.path.getsize(tmp_output) > 0, "Output file should not be empty"
         
         # Check that it used the custom dataset
-        assert "Dataset shape: (60, 9)" in result.stdout, "Should load 60 samples"
+        assert "Dataset shape: (60, 133)" in result.stdout, "Should load 60 samples with 133 columns"
         assert "Primes: 30, Non-primes: 30" in result.stdout, "Should have correct counts"
         
         print(f"✓ PCA analysis with custom dataset test passed")

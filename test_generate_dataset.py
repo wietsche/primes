@@ -47,12 +47,29 @@ def test_default_generation():
         # Verify CSV content
         df = pd.read_csv(tmp_path)
         assert df.shape[0] == 200, "Should have 200 samples"
-        assert df.shape[1] == 9, "Should have 9 columns"
+        # 11 digit columns + 110 one-hot (11*10) + 10 math features + prime + number = 133 columns
+        assert df.shape[1] == 133, f"Should have 133 columns, got {df.shape[1]}"
         
-        # Check column names
-        expected_cols = ['ten_power_0', 'ten_power_1', 'ten_power_2', 'ten_power_3',
-                         'ten_power_4', 'ten_power_5', 'ten_power_6', 'prime', 'number']
-        assert list(df.columns) == expected_cols, "Should have correct columns"
+        # Check that basic digit columns exist
+        for i in range(11):
+            assert f'ten_power_{i}' in df.columns, f"Should have ten_power_{i}"
+        
+        # Check for one-hot encoded columns
+        assert 'ten_power_0_is_0' in df.columns, "Should have one-hot encoded features"
+        assert 'ten_power_10_is_9' in df.columns, "Should have one-hot encoded features for all positions"
+        
+        # Check mathematical features
+        assert 'sum_digits' in df.columns, "Should have sum_digits"
+        assert 'digital_root' in df.columns, "Should have digital_root"
+        assert 'product_digits' in df.columns, "Should have product_digits"
+        assert 'last_two_digits' in df.columns, "Should have last_two_digits"
+        assert 'alternating_digit_sum' in df.columns, "Should have alternating_digit_sum"
+        assert 'mod_2' in df.columns, "Should have mod_2"
+        assert 'mod_11' in df.columns, "Should have mod_11"
+        
+        # Check meta columns
+        assert 'prime' in df.columns, "Should have prime label"
+        assert 'number' in df.columns, "Should have original number"
         
         # Check prime distribution
         prime_count = df['prime'].sum()
