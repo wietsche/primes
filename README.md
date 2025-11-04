@@ -10,7 +10,13 @@ This project generates a dataset of 200 7-digit numbers (100 primes and 100 non-
 
 - **Custom Dataset Generation**: Generate CSV datasets with any number of prime and non-prime samples using `generate_dataset.py`
 - **Data Generation**: Automatically generates 100 7-digit prime and 100 non-prime numbers (default)
-- **Feature Engineering**: Converts each number into 7 features (one per digit position: `ten_power_0` through `ten_power_6`)
+- **Advanced Feature Engineering**: Converts each number into rich features:
+  - 7 digit position features (one-hot encoded: `ten_power_0` through `ten_power_6`)
+  - 4 mathematical features based on prime number properties:
+    - Sum of digits (for divisibility rules)
+    - Digital root (iterative digit sum)
+    - Product of digits
+    - Last two digits value
 - **PCA Visualization**: Visualize primes and non-primes in 2D space using Principal Component Analysis with `pca_analysis.py`
 - **AutoML**: Trains and evaluates multiple models:
   - Logistic Regression
@@ -134,8 +140,14 @@ Each sample has the following features:
 - `ten_power_4`: Ten thousands digit
 - `ten_power_5`: Hundred thousands digit
 - `ten_power_6`: Millions digit (leftmost)
+- `sum_digits`: Sum of all digits (useful for divisibility by 3 and 9)
+- `digital_root`: Digital root of the number (iterative sum until single digit)
+- `product_digits`: Product of all digits
+- `last_two_digits`: Value of the last two digits (0-99)
 - `prime`: Label (1 for prime, 0 for non-prime)
 - `number`: The original 7-digit number
+
+**Note:** The classifier uses 70 one-hot encoded features for the digits plus 4 scaled mathematical features, totaling 74 features for training.
 
 ## Results
 
