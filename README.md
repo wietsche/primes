@@ -19,6 +19,7 @@ This project generates a dataset of 200 7-digit numbers (100 primes and 100 non-
   - Support Vector Machine (SVM)
   - Neural Network (MLP)
 - **Model Selection**: Automatically selects the best model based on 5-fold cross-validation AUC
+- **Neural Network Hyperparameter Search**: Advanced model evaluation with grid search to optimize F1-score using neural networks
 - **Evaluation**: Generates ROC curves, AUC scores, confusion matrices, and classification reports
 
 ## Installation
@@ -88,12 +89,40 @@ python pca_analysis.py --input large_dataset.csv --output large_pca.png
 
 Run `python pca_analysis.py --help` for all available options.
 
+### Neural Network Model with Hyperparameter Search
+
+For advanced model evaluation focusing on F1-score optimization:
+
+```bash
+# Train using a pre-generated CSV file with neural network hyperparameter search
+python model_evaluation_nn.py --input prime_dataset.csv
+
+# Generate new dataset and train with neural network (default behavior)
+python model_evaluation_nn.py
+
+# Train with more cross-validation folds for better hyperparameter search
+python model_evaluation_nn.py --input prime_dataset.csv --cv 10
+
+# Train using a large dataset with custom CV folds
+python generate_dataset.py --primes 1000 --non-primes 1000 --output large_dataset.csv
+python model_evaluation_nn.py --input large_dataset.csv --cv 10
+```
+
+This script performs grid search over neural network hyperparameters to find the best F1-score:
+- Hidden layer sizes: (50,), (100,), (50, 30), (100, 50), (100, 50, 25), (150, 100, 50)
+- Activation functions: ReLU, tanh
+- Regularization (alpha): 0.0001, 0.001, 0.01
+- Learning rates: constant, adaptive
+
+Run `python model_evaluation_nn.py --help` for all available options.
+
 ## Output
 
 The scripts generate:
 1. **prime_dataset.csv** - The complete dataset with 200 samples
-2. **model_evaluation.png** - Visualization of ROC curve and confusion matrix
-3. **pca_analysis.png** - 2D PCA visualization showing primes and non-primes side-by-side
+2. **model_evaluation.png** - Visualization of ROC curve and confusion matrix (from `prime_ml_classifier.py`)
+3. **model_evaluation_nn.png** - Confusion matrix with F1-score from neural network hyperparameter search (from `model_evaluation_nn.py`)
+4. **pca_analysis.png** - 2D PCA visualization showing primes and non-primes side-by-side
 
 ## Dataset Structure
 
