@@ -36,9 +36,9 @@ def neural_network_hyperparameter_search(X_train, y_train, X_test, y_test, cv=5)
     Perform hyperparameter search on neural network to find the best F-score.
     
     Args:
-        X_train: Training features (full feature set from CSV)
+        X_train: Training features
         y_train: Training labels
-        X_test: Test features (full feature set from CSV)
+        X_test: Test features
         y_test: Test labels
         cv: Number of cross-validation folds
         
@@ -332,7 +332,7 @@ Examples:
         print(f"\nFirst few samples:")
         print(df.head(10))
     else:
-        print("\nStep 1: Generating 11-digit numbers...")
+        print(f"\nStep 1: Generating {NUM_DIGITS}-digit numbers...")
         print("-" * 60)
         prime_numbers = generate_prime_numbers(100)
         print(f"Generated {len(prime_numbers)} prime numbers")

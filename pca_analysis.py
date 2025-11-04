@@ -1,7 +1,7 @@
 """
 Principal Component Analysis (PCA) on Prime Dataset
 
-This script performs PCA on the 11-digit prime dataset to visualize
+This script performs PCA on the prime dataset to visualize
 primes and non-primes in 2D space using two side-by-side plots.
 """
 

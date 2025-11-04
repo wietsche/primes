@@ -1,5 +1,5 @@
 """
-Test for the neural network model evaluation with hyperparameter search.
+Test for the neural network prime classifier with hyperparameter search.
 """
 
 import sys
