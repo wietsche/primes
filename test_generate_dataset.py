@@ -148,17 +148,17 @@ def test_data_integrity():
         # Verify digit extraction for each sample
         for idx, row in df.iterrows():
             number = row['number']
-            digits = str(number).zfill(7)
+            digits = str(number).zfill(11)
             
             # Verify each digit position
-            for i in range(7):
-                expected_digit = int(digits[6 - i])
+            for i in range(11):
+                expected_digit = int(digits[10 - i])
                 actual_digit = row[f'ten_power_{i}']
                 assert expected_digit == actual_digit, \
                     f"Digit mismatch for number {number} at position {i}"
             
-            # Verify number is 7-digit
-            assert 1000000 <= number <= 9999999, f"{number} should be 7-digit"
+            # Verify number is 11-digit
+            assert 10000000000 <= number <= 99999999999, f"{number} should be 11-digit"
         
         print("✓ Data integrity verified for all samples")
         
